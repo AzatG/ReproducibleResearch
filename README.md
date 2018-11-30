@@ -6,7 +6,7 @@ It contains two file:
 
 1.RMarkdown including r code and output	
 
-2. HTML document including generated ouput from RMarkdown
+2.HTML document including generated ouput from RMarkdown
 
 
 You're welcome!
