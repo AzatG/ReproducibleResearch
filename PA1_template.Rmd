@@ -1,7 +1,7 @@
 ---
-title: "Reproducible research week2"
+title: "Reproducible research assignment 1"
 author: "Azat Gabdolla"
-date: '29 октября 2018 г '
+date: '29 декабря 2018 г '
 output: html_document
 ---
 
@@ -9,63 +9,97 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+
 ```{r}
 suppressMessages(suppressWarnings(library(data.table)))
 suppressMessages(suppressWarnings(library(lattice)))
 suppressMessages(suppressWarnings(library(ggplot2)))
 ```
 
+# Loading and preprocessing the data
 
+1. Code for reading in the dataset and/or processing the data
 ```{r}
 setwd("~/Edu/Reproducible research")
 
 activity <- setDT(read.csv("activity.csv",sep = ",", header = TRUE, na.strings = c("NA", " ", '#DIV/0!')))
 ```
 
-##Mean total number steps taken per day
-Total steps taken per day
+
+# What is mean total number of steps taken per day?
+
+Table of total steps taken per day
+
 ```{r}
 activity[!is.na(steps) , sum(steps), date]
 ```
-Histogram of  
+
+2. Histogram of the total number of steps taken each day
+
 ```{r}
 histogram(activity[!is.na(steps) , sum(steps), date][,V1], xlab = c("total steps"), ylab = c("percentage") )
 ```
-Mean and median of total steps taken per day
+3. Mean and median number of steps taken each day
 ```{r}
-activity[!is.na(steps) , sum(steps), date][,mean(V1)]
-activity[!is.na(steps) , sum(steps), date][,median(V1)]
+paste("Mean - ", activity[!is.na(steps) , sum(steps), date][,mean(V1)])
+paste("Median - ", activity[!is.na(steps) , sum(steps), date][,median(V1)])
 ```
 
-##Average daily activity pattern
+# What is the average daily activity pattern?
 
+4. Time series plot of the average number of steps taken
 ```{r}
+
 tsactivity <-  aggregate(activity$steps, by = list(activity$interval), mean, na.rm=TRUE)
 tsactivity <- setDT(tsactivity)
 setnames(tsactivity, c("interval" , "mean.steps"))
 ggplot(tsactivity,  aes(x=interval, y = mean.steps))+geom_line()
+
 ```
 
-## Imputing Missing values
+5. The 5-minute interval that, on average, contains the maximum number of steps
+
+```{r}
+paste("Interval on which maximum steps are done is ", tsactivity[mean.steps == max(mean.steps), .(interval)][,interval])
+```
+
+
+# Imputing Missing values
+
+6. Code to describe and show a strategy for imputing missing data
+Code that is used is attached in markdown, so in this part I explain the way 
+
+1. We calculate number of missing value
 ```{r}
 paste( activity[is.na(steps),.N], "of cells are missing in steps")
 ```
-
-
-```{r}
-tsactivity[mean.steps == max(mean.steps), .(interval)]
-```
-
-When interval is 835 the maximum mean steps occur
+2. I calculate average number of steps per one unit of interval done on measures that are not 0 and empty
+3. I impute in missing values of steps the average step per one unit of measurement multiplied by the interval, so I get new dataset  without missing values   
 
 ```{r}
-activity[!is.na(steps) & ! interval == 0, mean(steps/interval)]
+Oneunit <- activity[!is.na(steps) & ! interval == 0, mean(steps/interval)]
 # 0.0350705
-activity[is.na(steps), steps := activity[!is.na(steps) & ! interval == 0, mean(steps/interval)]*interval]
+activity[is.na(steps), steps := Oneunit*interval]
 
 ```
 
-## Are there differences in activity patterns between weekdays and weekends?
+```{r}
+paste("Number of missing values in new dataset -", activity[is.na(steps), .N])
+```
+
+7. Histogram of the total number of steps taken each day after missing values are imputed
+
+```{r}
+histogram(activity[!is.na(steps) , sum(steps), date][,V1], xlab = c("total steps"), ylab = c("percentage") )
+```
+
+```{r}
+paste("New Mean - ", activity[!is.na(steps) , sum(steps), date][,mean(V1)])
+paste("New Median - ", activity[!is.na(steps) , sum(steps), date][,median(V1)])
+```
+There is no big difference in patterns how data behave. However new mean and new median are larger than in dataset with missing values
+
+# Are there differences in activity patterns between weekdays and weekends?
 
 ```{r}
   activity[,date:= as.Date(date)]
@@ -73,6 +107,8 @@ activity[is.na(steps), steps := activity[!is.na(steps) & ! interval == 0, mean(s
 activity$weekdays <- as.factor(ifelse(weekdays(activity$date) %in% c("суббота","воскресенье"), "weekend", "weekday"))
 
 ```
+
+8. Panel plot comparing the average number of steps taken per 5-minute interval across weekdays and weekends
 
 ```{r}
 steps_interval_mean <- aggregate(steps ~ interval + weekdays, FUN=mean, 
@@ -87,3 +123,5 @@ xyplot(steps ~ interval | weekdays,
 ```
 
 
+In order to make code reproducible, please set russian language on your computer, and locate code, data on folder 
+"Reproducible Research"" in Folder "Edu" on your computer. In case of absence of necessary package, download them with install.packages() function. In these cases Markdown will be reproducible
